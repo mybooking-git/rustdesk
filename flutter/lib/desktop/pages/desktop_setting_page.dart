@@ -1186,9 +1186,6 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
              if (usePassword)
                hide_cm(true).marginOnly(left: _kContentHSubMargin - 6),
 
-            if (usePassword)
-               hide_cm(!locked).marginOnly(left: _kContentHSubMargin - 6),
-
             if (usePassword) radios[2],
           ]);
         })));
@@ -1360,9 +1357,9 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
     return ChangeNotifierProvider.value(
         value: gFFI.serverModel,
         child: Consumer<ServerModel>(builder: (context, model, child) {
-        //  final enableHideCm = model.approveMode == 'password' &&
-         //     model.verificationMethod == kUsePermanentPassword;
-		 final enableHideCm = true;
+          final enableHideCm = model.approveMode == 'password' &&
+              model.verificationMethod == kUsePermanentPassword;
+		// final enableHideCm = true;
           onHideCmChanged(bool? b) {
             if (b != null) {
               bind.mainSetOption(
@@ -1379,9 +1376,11 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
                   children: [
                     Checkbox(
                             value: model.hideCm,
-                            onChanged: enabled && enableHideCm
-                                ? onHideCmChanged
-                                : null)
+                 //           onChanged: enabled && enableHideCm
+                 //               ? onHideCmChanged
+                 //               : null
+							onChanged:onHideCmChanged
+				 )
                         .marginOnly(right: 5),
                     Expanded(
                       child: Text(
