@@ -1,4 +1,4 @@
-name: Flutter OnlyForWindows Build
+name: Flutter Nightly Build
 
 on:
   schedule:
@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  run-flutter-OnlyForWindows-build:
-    uses: ./.github/workflows/flutter-build.yml.yml
+  run-flutter-nightly-build:
+    uses: ./.github/workflows/flutter-build.yml
     secrets: inherit
     with:
       upload-artifact: true
-      upload-tag: "ForWindows64"
+      upload-tag: "nightly"
