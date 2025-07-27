@@ -1379,8 +1379,7 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
                  //           onChanged: enabled && enableHideCm
                  //               ? onHideCmChanged
                  //               : null
-							onChanged:onHideCmChanged
-				 )
+							onChanged:onHideCmChanged)
                         .marginOnly(right: 5),
                     Expanded(
                       child: Text(
