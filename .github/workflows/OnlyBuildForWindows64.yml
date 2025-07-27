@@ -8,7 +8,7 @@ on:
 
 jobs:
   run-flutter-OnlyForWindows-build:
-    uses: ./.github/workflows/flutter-build-for-Win_64.yml
+    uses: ./.github/workflows/flutter-build.yml.yml
     secrets: inherit
     with:
       upload-artifact: true
