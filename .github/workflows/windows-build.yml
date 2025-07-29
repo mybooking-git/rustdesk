@@ -1,8 +1,8 @@
-name: Build Windows Only
+name: Windows Build Only
 
 on:
   push:
-    branches: [ main ]
+    branches: [ my-custom ]
     paths:
       - '**.rs'
       - '**.dart'
@@ -12,7 +12,7 @@ on:
       - '**.h'
   pull_request:
     branches: [ my-custom ]
-  workflow_dispatch: # 允许手动触发
+  workflow_dispatch:  # 允许手动触发
 
 env:
   VERSION: ${{ github.ref_name || 'dev' }}
@@ -22,107 +22,98 @@ env:
 
 jobs:
   build-windows:
-    name: Windows (${{ matrix.job.arch }})
+    name: Build Windows (${{ matrix.arch }})
     runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
-        job:
-          - { arch: x64, target: x86_64-pc-windows-msvc, vcpkg-triplet: x64-windows-static }
-          - { arch: x86, target: i686-pc-windows-msvc, vcpkg-triplet: x86-windows-static }
+        arch: [x64, x86]  # 同时构建 64 位和 32 位
+        include:
+          - arch: x64
+            target: x86_64-pc-windows-msvc
+            vcpkg_triplet: x64-windows-static
+          - arch: x86
+            target: i686-pc-windows-msvc
+            vcpkg_triplet: x86-windows-static
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          submodules: 'recursive'
+          submodules: recursive
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          target: ${{ matrix.job.target }}
+          target: ${{ matrix.target }}
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          architecture: x64  # Windows 只需 x64 架构的 Flutter
 
-      - name: Set up VCPKG
+      - name: Set up VCPKG (for FFmpeg/Opus)
         uses: microsoft/vcpkg-action@v1
         with:
           vcpkgDirectory: ${{ runner.workspace }}/vcpkg
-          vcpkgTriplet: ${{ matrix.job.vcpkg-triplet }}
+          vcpkgTriplet: ${{ matrix.vcpkg_triplet }}
           vcpkgArguments: 'ffmpeg opus'
 
-      - name: Build RustDeskTempTopMostWindow (dependency)
-        uses: ./.github/workflows/third-party-RustDeskTempTopMostWindow.yml
-        with:
-          upload-artifact: true
-          target: windows-2022
-          configuration: Release
-          platform: ${{ matrix.job.arch == 'x64' ? 'x64' : 'Win32' }}
-          target_version: Windows10
-
-      - name: Download TopMostWindow artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: topmostwindow-artifacts
-          path: ./rustdesk
-
-      - name: Build Rustdesk (Flutter + Rust)
+      - name: Build RustDesk (Flutter + Rust)
         shell: bash
         run: |
-          # 构建主程序
+          # 生成 Sciter 内联资源
           python3 res/inline-sciter.py
-          cargo build --features inline,vram,hwcodec --release --target ${{ matrix.job.target }}
-          
+
+          # 构建 Rust 主程序（启用硬件加速）
+          cargo build --features inline,vram,hwcodec --release --target ${{ matrix.target }}
+
           # 准备输出目录
           mkdir -p ./Release
-          mv ./target/${{ matrix.job.target }}/release/rustdesk.exe ./Release/
-          
-          # 复制依赖资源
-          curl -LJ -o ./Release/sciter.dll https://github.com/c-smile/sciter-sdk/raw/master/bin.win/${{ matrix.job.arch == 'x64' ? 'x64' : 'x32' }}/sciter.dll
+          mv ./target/${{ matrix.target }}/release/rustdesk.exe ./Release/
+
+          # 下载 Sciter.dll 和 usbmmidd
+          curl -LJ -o ./Release/sciter.dll https://github.com/c-smile/sciter-sdk/raw/master/bin.win/${{ matrix.arch }}/sciter.dll
           curl -LJ -o ./usbmmidd_v2.zip https://github.com/rustdesk-org/rdev/releases/download/usbmmidd_v2/usbmmidd_v2.zip
           unzip usbmmidd_v2.zip -d ./Release/usbmmidd_v2
 
-      - name: Build portable executable
+      - name: Build Portable Executable
         shell: bash
         run: |
-          # 生成自解压包
           pushd ./libs/portable
           pip3 install -r requirements.txt
           python3 generate.py -f ../../Release/ -o . -e ../../Release/rustdesk.exe
           popd
           mkdir -p ./SignOutput
-          mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
+          mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.arch }}.exe
 
-      - name: Build MSI installer
+      - name: Build MSI Installer
         run: |
-          # 预处理MSI配置
           pushd ./res/msi
           python preprocess.py --arp -d ../../Release
           nuget restore msi.sln
-          msbuild msi.sln -p:Configuration=Release -p:Platform="${{ matrix.job.arch }}" /p:TargetVersion=Windows10
-          mv ./Package/bin/${{ matrix.job.arch }}/Release/en-us/Package.msi ../../SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.msi
+          msbuild msi.sln -p:Configuration=Release -p:Platform="${{ matrix.arch }}" /p:TargetVersion=Windows10
+          mv ./Package/bin/${{ matrix.arch }}/Release/en-us/Package.msi ../../SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.arch }}.msi
           popd
 
-      - name: Sign artifacts (if enabled)
+      - name: Sign Artifacts (Optional)
         if: env.SIGN_BASE_URL != ''
         shell: bash
         run: |
-          pip3 install requests argparse
-          BASE_URL=${{ secrets.SIGN_BASE_URL }} SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }} python3 res/job.py sign_files ./SignOutput
+          pip3 install requests
+          python3 res/job.py sign_files ./SignOutput
 
-      - name: Upload artifacts
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: rustdesk-windows-${{ matrix.job.arch }}
+          name: rustdesk-windows-${{ matrix.arch }}
           path: ./SignOutput/*
 
-      - name: Publish release
+      - name: Create Release (on Tag)
         uses: softprops/action-gh-release@v1
-        if: github.event_name == 'push' && github.ref_type == 'tag'
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         with:
           files: ./SignOutput/*
           tag_name: ${{ env.TAG_NAME }}
