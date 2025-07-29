@@ -11,7 +11,7 @@ on:
       - '**.cpp'
       - '**.h'
   pull_request:
-    branches: [ main ]
+    branches: [ my-custom ]
   workflow_dispatch: # 允许手动触发
 
 env:
@@ -103,7 +103,7 @@ jobs:
           pushd ./res/msi
           python preprocess.py --arp -d ../../Release
           nuget restore msi.sln
-          msbuild msi.sln -p:Configuration=Release -p:Platform=${{ matrix.job.arch }} /p:TargetVersion=Windows10
+          msbuild msi.sln -p:Configuration=Release -p:Platform="${{ matrix.job.arch }}" /p:TargetVersion=Windows10
           mv ./Package/bin/${{ matrix.job.arch }}/Release/en-us/Package.msi ../../SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.msi
           popd
 
