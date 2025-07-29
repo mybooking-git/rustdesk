@@ -25,7 +25,7 @@ import 'package:url_launcher/url_launcher_string.dart';
 
 import '../../common/widgets/dialog.dart';
 import '../../common/widgets/login.dart';
-//import '../../main.dart';
+import '../../main.dart';
 
 const double _kTabWidth = 200;
 const double _kTabHeight = 42;
@@ -1368,14 +1368,16 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
                   key: 'allow-hide-cm', value: bool2option('allow-hide-cm', b));
 		    // 2. 同步更新模型状态（关键：修复勾选状态不更新问题）
     		model.hideCm = b;
-		    // 3. 同步"实际隐藏"配置（控制启动时是否隐藏）
-                bind.cmSetConfig(name: "hide_cm", value: b ? "true" : "false");
+		    // 3. 通过模型的现有逻辑触发窗口操作  
+                model.notifyListeners(); 
             	   // 4. 立即执行窗口显示/隐藏
-		//    if (b) {
-         //     hideCmWindow();
-        //    } else {
-        //      showCmWindow();
-       //     }
+		 if (b) {  
+      hideCmWindow();  
+    } else {  
+      showCmWindow();  
+    }  
+    // 4. 通知UI更新  
+    model.notifyListeners(); 
             }
           }
 
