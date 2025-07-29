@@ -1366,10 +1366,16 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
 		    // 1. 更新底层配置
               bind.mainSetOption(
                   key: 'allow-hide-cm', value: bool2option('allow-hide-cm', b));
-		    // 2. 更新模型状态
+		    // 2. 同步更新模型状态（关键：修复勾选状态不更新问题）
     		model.hideCm = b;
-		    // 3. 调用窗口隐藏/显示函数
-		hideCmWindow(); // 隐藏窗口
+		    // 3. 同步"实际隐藏"配置（控制启动时是否隐藏）
+                bind.cmSetConfig(name: "hide_cm", value: b ? "true" : "false");
+            	   // 4. 立即执行窗口显示/隐藏
+		    if (b) {
+              hideCmWindow();
+            } else {
+              showCmWindow();
+            }
             }
           }
 
