@@ -25,6 +25,7 @@ import 'package:url_launcher/url_launcher_string.dart';
 
 import '../../common/widgets/dialog.dart';
 import '../../common/widgets/login.dart';
+import '../../main.dart';
 
 const double _kTabWidth = 200;
 const double _kTabHeight = 42;
@@ -1362,8 +1363,19 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
               model.verificationMethod == kUsePermanentPassword;
           onHideCmChanged(bool? b) {
             if (b != null) {
-              bind.mainSetOption(
-                  key: 'allow-hide-cm', value: bool2option('allow-hide-cm', b));
+              // 1. 更新底层配置
+			  bind.mainSetOption(key: 'allow-hide-cm', value: bool2option('allow-hide-cm', b));
+			   // 2. 保存「当前是否隐藏复选框」的状态（新增逻辑）
+			   bind.mainSetOption( key: 'hide_cm', value: bool2option('hide_cm', b));
+			   // 2. 同步更新模型状态（关键：修复勾选状态不更新问题） 
+			   model.hideCm = b; 
+			   // 3. 通过模型的现有逻辑触发窗口操作
+			   model.notifyListeners();
+			   // 4. 立即执行窗口显示/隐藏
+			   if (b) {hideCmWindow(); } 
+			   else {showCmWindow(); }
+			   // 4. 通知UI更新 
+			   model.notifyListeners(); 
             }
           }
 
