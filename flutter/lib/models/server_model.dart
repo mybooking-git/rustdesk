@@ -133,18 +133,18 @@ class ServerModel with ChangeNotifier {
     _emptyIdShow = translate("Generating ...");
     _serverId = IDTextEditingController(text: _emptyIdShow);
 
-    /*
+//    /*
     // initital _hideCm at startup
     final verificationMethod =
         bind.mainGetOptionSync(key: kOptionVerificationMethod);
     final approveMode = bind.mainGetOptionSync(key: kOptionApproveMode);
     _hideCm = option2bool(
-        'allow-hide-cm', bind.mainGetOptionSync(key: 'allow-hide-cm'));
+        'hide_cm', bind.mainGetOptionSync(key: 'hide_cm'));
     if (!(approveMode == 'password' &&
         verificationMethod == kUsePermanentPassword)) {
       _hideCm = false;
     }
-    */
+//    */
 
     timerCallback() async {
       final connectionStatus =
