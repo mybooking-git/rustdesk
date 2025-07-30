@@ -289,6 +289,7 @@ void runConnectionManagerScreen() async {
   );
   final hide = await bind.cmGetConfig(name: "hide_cm") == 'true';
   gFFI.serverModel.hideCm = hide;
+  gFFI.serverModel.notifyListeners(); // 强制通知UI刷新
   if (hide) {
     await hideCmWindow(isStartup: true);
   } else {
