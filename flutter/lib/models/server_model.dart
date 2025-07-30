@@ -138,8 +138,9 @@ class ServerModel with ChangeNotifier {
     final verificationMethod =
         bind.mainGetOptionSync(key: kOptionVerificationMethod);
     final approveMode = bind.mainGetOptionSync(key: kOptionApproveMode);
-    _hideCm = option2bool(
-        'hide_cm', bind.mainGetOptionSync(key: 'hide_cm'));
+  //  _hideCm = option2bool('hide_cm', bind.mainGetOptionSync(key: 'hide_cm'));
+	final value = bind.mainGetOptionSync(key: 'hide_cm');
+    _hideCm = value == 'Y' || value == 'true'; // 等效实现
     if (!(approveMode == 'password' &&
         verificationMethod == kUsePermanentPassword)) {
       _hideCm = false;
