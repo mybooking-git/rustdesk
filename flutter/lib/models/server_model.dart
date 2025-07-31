@@ -226,7 +226,7 @@ class ServerModel with ChangeNotifier {
 
     notifyListeners();
   }
-
+/*重构此函数，解决“隐藏连接管理窗口”初始化问题
   updatePasswordModel() async {
     var update = false;
     final temporaryPassword = await bind.mainGetTemporaryPassword();
@@ -292,6 +292,79 @@ class ServerModel with ChangeNotifier {
       update = true;
     }
     */
+    if (update) {
+      notifyListeners();
+    }
+  }
+*/
+//重构的函数如下
+updatePasswordModel() async {
+    var update = false;
+    final temporaryPassword = await bind.mainGetTemporaryPassword();
+    final verificationMethod =
+        await bind.mainGetOption(key: kOptionVerificationMethod);
+    final temporaryPasswordLength =
+        await bind.mainGetOption(key: "temporary-password-length");
+    final approveMode = await bind.mainGetOption(key: kOptionApproveMode);
+    final numericOneTimePassword =
+        await mainGetBoolOption(kOptionAllowNumericOneTimePassword);
+    
+    // 从配置文件加载 hide_cm 状态
+    final hideCmOption = await bind.mainGetOption(key: 'hide_cm');
+    var hideCm = hideCmOption == 'Y' || hideCmOption == 'true';
+    if (!(approveMode == 'password' &&
+        verificationMethod == kUsePermanentPassword)) {
+      hideCm = false;
+    }
+
+    if (_approveMode != approveMode) {
+      _approveMode = approveMode;
+      update = true;
+    }
+    var stopped = await mainGetBoolOption(kOptionStopService);
+    final oldPwdText = _serverPasswd.text;
+    if (stopped ||
+        verificationMethod == kUsePermanentPassword ||
+        _approveMode == 'click') {
+      _serverPasswd.text = '-';
+    } else {
+      if (_serverPasswd.text != temporaryPassword &&
+          temporaryPassword.isNotEmpty) {
+        _serverPasswd.text = temporaryPassword;
+      }
+    }
+    if (oldPwdText != _serverPasswd.text) {
+      update = true;
+    }
+    if (_verificationMethod != verificationMethod) {
+      _verificationMethod = verificationMethod;
+      update = true;
+    }
+    if (_temporaryPasswordLength != temporaryPasswordLength) {
+      if (_temporaryPasswordLength.isNotEmpty) {
+        bind.mainUpdateTemporaryPassword();
+      }
+      _temporaryPasswordLength = temporaryPasswordLength;
+      update = true;
+    }
+    if (_allowNumericOneTimePassword != numericOneTimePassword) {
+      _allowNumericOneTimePassword = numericOneTimePassword;
+      update = true;
+    }
+    
+    // 当 hideCm 状态改变时，更新UI
+    if (_hideCm != hideCm) {
+      _hideCm = hideCm;
+      if (desktopType == DesktopType.cm) {
+        if (hideCm) {
+          await hideCmWindow();
+        } else {
+          await showCmWindow();
+        }
+      }
+      update = true;
+    }
+    
     if (update) {
       notifyListeners();
     }
