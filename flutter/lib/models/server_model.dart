@@ -311,10 +311,10 @@ updatePasswordModel() async {
     
     // 从配置文件加载 hide_cm 状态
     final hideCmOption = await bind.mainGetOption(key: 'hide_cm');
-    var hideCm = hideCmOption == 'Y' || hideCmOption == 'true';
+    var newHideCmState = hideCmOption == 'Y' || hideCmOption == 'true';
     if (!(approveMode == 'password' &&
         verificationMethod == kUsePermanentPassword)) {
-      hideCm = false;
+      newHideCmState = false;
     }
 
     if (_approveMode != approveMode) {
@@ -353,10 +353,10 @@ updatePasswordModel() async {
     }
     
     // 当 hideCm 状态改变时，更新UI
-    if (_hideCm != hideCm) {
-      _hideCm = hideCm;
+    if (this.hideCm != newHideCmState) {
+      this.hideCm = newHideCmState;
       if (desktopType == DesktopType.cm) {
-        if (hideCm) {
+        if (this.hideCm) {
           await hideCmWindow();
         } else {
           await showCmWindow();
